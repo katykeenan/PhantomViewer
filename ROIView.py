@@ -6,7 +6,7 @@ modules required pydicom : pip install pydicom --upgrade
 Uses ROIViewGui created from ROIViewGui.ui by QT4
   execute   "pyuic4 ROIViewGui.ui -o ROIViewGui.py" from system shell to regenerate ROIViewGui.py from ROIViewGui.ui
 @author: Stephen Russek
-Units: times in ms, distances in mm, ADC in mm2/s, Temperature in C, 
+Units: time in ms, distance in mm, ADC in mm2/s, Temperature in C,
 last modification: 2-21-15
 """
 import sys
@@ -646,7 +646,7 @@ class ROIView(QtGui.QMainWindow):
 
   def unWrapCurrentImage(self):
     if self.nCurrentImage > 0:
-      self.ds.PA[self.nCurrentImage] = unwrap(self.ds.PA[self.nCurrentImage],wrap_around_axis_0=False, wrap_around_axis_1=False,wrap_around_axis_2=False)
+      self.ds.PA[self.nCurrentImage] = unwrap(self.ds.PA[self.nCurrentImage], wrap_around_axis_0=False, wrap_around_axis_1=False,wrap_around_axis_2=False)
       self.displayCurrentImage() 
 
   def planeBackgroundSubtract(self):   
@@ -872,7 +872,7 @@ class ROIView(QtGui.QMainWindow):
       self.msgPrint ("ROI-" +"{:02d}".format(i+1) + '    ') 
       for j, pa in enumerate([self.ds.PA[k] for k in self.reducedImageSet]):
         array = roi.getArrayRegion(pa,self.imv.getImageItem())    
-        rd[i ,j]= (array.mean()-self.ds.ScaleIntercept[self.reducedImageSet[j]])/self.ds.ScaleSlope[self.reducedImageSet[j]] #corrects for scaling in Phillips data
+        rd[i ,j]= (array.mean()-self.ds.ScaleIntercept[self.reducedImageSet[j]])/self.ds.ScaleSlope[self.reducedImageSet[j]] #corrects for scaling in Philips data
         self.msgPrint ( "{:12.1f}".format(rd[i,j]) )
       c = self.rgb_to_hex(self.setPlotColor(i))
       if self.dataType in ["T1" , "T2", "Dif"] and not self.ADCmap:
@@ -1075,7 +1075,7 @@ class ROIView(QtGui.QMainWindow):
       self.msgPrint ("ROI   T1(ms) T1err(%)        Si  Sierr(%)       B    Berr(%)  T1ref(ms)   T1dev(%)" + os.linesep)
       sr = "T1-IR fitting details" + "\n"
       for i, roi in enumerate(self.pgROIs):
-          params=T1IRabs.initializeT1IRabs (i,TI, data[i,:],self.currentROIs.ROIs[i], self.useROIValues)
+          params=T1IRabs.initializeT1IRabs (i,TI, data[i,:],np.array([self.ds.TR[j] for j in self.reducedImageSet])[0], self.currentROIs.ROIs[i], self.useROIValues)
           pdict=params[0] #parameter dictionary
           plist=params[1] #parameter list   
           out = lmfit.minimize(T1IRabs.T1IRabs,pdict,args=(TI,data[i,:]))

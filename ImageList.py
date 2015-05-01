@@ -190,7 +190,7 @@ class ImageList():
       b=float(ImageFile[0x0019, 0x100C].value)
     except:
       pass   
-    if hasattr(ImageFile,"Diffusionbvalue"): #Phillips tag (0018, 9087
+    if hasattr(ImageFile,"Diffusionbvalue"): #Philips tag (0018, 9087)
       b=ImageFile.Diffusionbvalue
     try:    #GE b values often at (0043, 1039) in first of 5 element string array   
       b=float(ImageFile[0x0043, 0x1039].value[0])
@@ -232,14 +232,16 @@ class ImageList():
     if fileType == "fdf":
         self.PA.append(ImageFile.PA)
 #          QtGui.QMessageBox.information(self, 'Display Image', 'Cannot read image data', buttons=QtGui.QMessageBox.Ok, defaultButton=QtGui.QMessageBox.Ok)
-# Phillips scaling corrections FP = (PV-SI)/SS = PV/SS where FP is the floating point value, PV is the pixel value, SI and SS are the scaled slope and intercept
+# Philips scaling corrections FP = (PV-SI)/SS = PV/SS where FP is the floating point value, PV is the pixel value, SI and SS are the scaled slope and intercept
 # SS is in [0x2005, 0x100E] and si is in [0x2005, 0x100D], both are single precision floats
+
     try:
-      ss=struct.unpack('f',ImageFile[0x2005, 0x100E].value)[0]
+      #ss=struct.unpack('f', ImageFile[0x2005, 0x100e].value)[0]
+      ss = ImageFile[0x2005, 0x100E].value
     except:
       ss=1.0
     try:
-      si=struct.unpack('f',ImageFile[0x2005, 0x100D].value)[0]
+      si = ImageFile[0x2005, 0x100D].value
     except:
       si=0.0
     self.ScaleIntercept.append(si)  
