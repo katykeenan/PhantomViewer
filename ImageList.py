@@ -104,19 +104,21 @@ class ImageList():
   def addFile(self,fileName):
     extension = fileName.split(".")[-1]
     fileNameList = fileName.split(".")
-    if len(fileNameList) == 1:
+    if len(fileNameList) == 1: #If there is no extension try dicom
         self.unpackImageFile (dicom.read_file(str(fileName)), fileName, "dcm")
-    if len(fileNameList) > 2:
-        self.unpackImageFile (dicom.read_file(str(fileName)), fileName, "dcm")
-    if extension.toLower() == "dcm" or extension.toLower() == "ima": #If there is no extension try dicom
-        self.unpackImageFile (dicom.read_file(str(fileName)), fileName, "dcm")
-    if extension.toLower() == "tif":
-        #self.ds.PA.append(Image.open(str(fileName)))
-        self.unpackImageFile (Image.open(str(fileName)), fileName, "tif")
-    if extension.toLower() == "fdf":
-        VData=VarianData()
-        self.unpackImageFile (VData.read(str(fileName)), fileName, "fdf")
-        
+    if len(fileNameList) >= 2: #If there is no extension try dicom
+        if extension.toLower() == "dcm" or extension.toLower() == "ima":
+            self.unpackImageFile (dicom.read_file(str(fileName)), fileName, "dcm")
+        elif extension.toLower() == "tif":
+            #self.ds.PA.append(Image.open(str(fileName)))
+            self.unpackImageFile (Image.open(str(fileName)), fileName, "tif")
+        elif extension.toLower() == "fdf":
+            VData=VarianData()
+            self.unpackImageFile (VData.read(str(fileName)), fileName, "fdf")
+        else:
+            self.unpackImageFile (dicom.read_file(str(fileName)), fileName, "dcm")
+
+
   def    writeDicomFiles(self, filename):         
         for i in range(1,len(self.PA)):     #Image 0 is a null image for default display and will not be written out
             fileName = filename + str(i) + ".dcm"
