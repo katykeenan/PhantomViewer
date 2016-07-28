@@ -809,6 +809,7 @@ class ROIView(QtGui.QMainWindow):
       self.reducedImageSet= [i for i, val in enumerate(self.ds.SliceLocation)if val == currentSL]
       self.msgPrint ("Slice location(mm)=" + "{:6.1f}".format(self.ds.SliceLocation[self.nCurrentImage]) + "\n")   
     rd = np.zeros((len(self.pgROIs),len(self.reducedImageSet)))
+    rdstd = np.zeros((len(self.pgROIs),len(self.reducedImageSet)))
 # Set independent variable (parameter that is being varied ie TI, TE, TR, b etc
 # T1 data
     if self.dataType == "T1":
@@ -873,7 +874,9 @@ class ROIView(QtGui.QMainWindow):
       for j, pa in enumerate([self.ds.PA[k] for k in self.reducedImageSet]):
         array = roi.getArrayRegion(pa,self.imv.getImageItem())    
         rd[i ,j]= (array.mean()-self.ds.ScaleIntercept[self.reducedImageSet[j]])/self.ds.ScaleSlope[self.reducedImageSet[j]] #corrects for scaling in Philips data
+        rdstd[i,j]= (array.std()-self.ds.ScaleIntercept[self.reducedImageSet[j]])/self.ds.ScaleSlope[self.reducedImageSet[j]] #corrects for scaling in Philips data
         self.msgPrint ( "{:12.1f}".format(rd[i,j]) )
+        self.msgPrint ( "{:12.1f}".format(rdstd[i,j]) ) #print standard deviation on ROI; fix -- next to data now, want below.
       c = self.rgb_to_hex(self.setPlotColor(i))
       if self.dataType in ["T1" , "T2", "Dif"] and not self.ADCmap:
         self.rdPlot.plot(self.rdx, rd[i,:],pen=self.setPlotColor(i),symbolBrush=self.setPlotColor(i), symbolPen='w', name=self.currentROIs.ROIs[i].Name)    
@@ -885,6 +888,7 @@ class ROIView(QtGui.QMainWindow):
         for k in range(len(self.reducedImageSet)):
           self.rdPlot.plot(self.rdx, rd[:,k],pen=self.setPlotColor(0),symbolBrush=self.setPlotColor(0), symbolPen='w', name=self.currentROIs.ROIs[0].Name)    
     self.rdy = rd   #returns a numpy array of raw data
+    self.rdstd = rdstd
     self.background=0 #set background counts for fits
     if hasattr(self.Phantom, "SNRROIs"):    #obtain background from signal free region (SNR ROI)
       self.rdBackground=np.zeros(len(self.reducedImageSet))
@@ -899,7 +903,7 @@ class ROIView(QtGui.QMainWindow):
       if self.dataType == "T1":
         self.resultsPlot.setLogMode(x=False,y=True)
         if self.ui.tabT1.currentIndex() == 0: #T1 Inversion Recovery
-          self.fitT1IRData(self.rdx,self.rdy)   #
+          self.fitT1IRData(self.rdx,self.rdy,self.rdstd)   #
         if self.ui.tabT1.currentIndex() == 1: #T1 Variable Flip Angle
           self.fitT1VFAData(self.rdx,self.rdy)   #
         if self.ui.tabT1.currentIndex() == 2: #T1 Variable TR repetition time
@@ -1066,7 +1070,7 @@ class ROIView(QtGui.QMainWindow):
       self.resultsPlot.plot(np.arange(len(self.pgROIs))+1, self.T1results[:,0],pen=self.setPlotColor(i),symbolBrush=self.setPlotColor(i), symbolPen='w')
       self.report =self.report +  self.ui.txtResults.toPlainText() + sr
       
-  def fitT1IRData(self,TI,data):
+  def fitT1IRData(self,TI,data,weights):
       """Fits T1-IR data, calls fitting routines in T1IRabs"""
       self.fitx =np.arange(100) * np.amax(TI) * 1.1 /100  #generate TIs for fit plot
       self.fity=np.zeros((len(self.pgROIs),100))
@@ -1078,8 +1082,8 @@ class ROIView(QtGui.QMainWindow):
           params=T1IRabs.initializeT1IRabs (i,TI, data[i,:],np.array([self.ds.TR[j] for j in self.reducedImageSet])[0], self.currentROIs.ROIs[i], self.useROIValues)
           pdict=params[0] #parameter dictionary
           plist=params[1] #parameter list   
-          out = lmfit.minimize(T1IRabs.T1IRabs,pdict,args=(TI,data[i,:]))
-          self.fity[i:]= T1IRabs.T1IRabs(pdict, self.fitx, np.zeros(len(self.fitx)))
+          out = lmfit.minimize(T1IRabs.T1IRabs,pdict,args=(TI,data[i,:],weights[i,:]))
+          self.fity[i:]= T1IRabs.T1IRabs(pdict, self.fitx, np.zeros(len(self.fitx)),np.zeros(len(self.fitx)))
           self.msgPrint ("{:02d}".format(i+1)+ " " )
           sr = sr + "ROI " + "{:02d}".format(i+1)+os.linesep  #build output report text for detailed fitting info
           for p in plist:

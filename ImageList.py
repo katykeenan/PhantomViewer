@@ -244,12 +244,12 @@ class ImageList():
 
     try:
       #ss=struct.unpack('f', ImageFile[0x2005, 0x100e].value)[0]
-      ss = ImageFile[0x2005, 0x100E].value
-    except:
+      ss = float(ImageFile[0x2005, 0x100E].value)
+    except (ValueError, KeyError):
       ss=1.0
     try:
-      si = ImageFile[0x2005, 0x100D].value
-    except:
+      si = float(ImageFile[0x2005, 0x100D].value)
+    except (ValueError, KeyError):
       si=0.0
     self.ScaleIntercept.append(si)  
     self.ScaleSlope.append(ss) 

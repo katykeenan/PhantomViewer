@@ -34,7 +34,7 @@ def initializeT1IRabs (nroi=None,TI=None, data=None, TR=10000, roi = None, useRO
     return [T1params,paramlist]
 
 # define objective function: returns the array to be minimized
-def T1IRabs(params, TI, data):
+def T1IRabs(params, TI, data, weights):
     """ T1-IR model abs(exponential); TI inversion time array, T1 recovery time"""
     B = params['B'].value
     Si = params['Si'].value
@@ -43,10 +43,12 @@ def T1IRabs(params, TI, data):
 
     model = np.abs(Si*(1-B * np.exp(-TI/T1)))
     #model = np.abs(Si*(1+(B-1)*np.exp(-TR/T1)-B*np.exp(-TI/T1))) #to account for non-infinite TR
-    return (model - data)
+    #model = Si*(1-B * np.exp(-TI/T1))
+    #model = Si*(1+(B-1)*np.exp(-TR/T1)-B*np.exp(-TI/T1)) #to account for non-infinite TR
+    return (data - model)*weights
 
-def fitT1IRabs(params, TI, data):
+def fitT1IRabs(params, TI, data, weights):
     """fits signal vs TI data to T1IRabs model"""
-    result = lmfit.minimize(T1IRabs, params, args=(TI, data))
+    result = lmfit.minimize(T1IRabs, params, args=(TI, data, weights))
     final = data + result.residual
     return final
